@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OSDPlus demo: AnnotationToolkit custom UI mount</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/test/demo/assets/common.css" />
+    <link rel="stylesheet" href="/node_modules/osd-paperjs-annotation/src/css/annotationui.css" />
+    <link rel="stylesheet" href="/node_modules/osd-paperjs-annotation/src/css/editablecontent.css" />
+  </head>
+  <body>
+    <div class="demo-split-root">
+      <div class="demo-split-viewer">
+        <div id="viewer" class="viewer"></div>
+      </div>
+      <aside class="demo-chrome-panel" aria-label="Custom annotation chrome">
+        <h2>Custom container</h2>
+        <p>
+          Stock <code>layout</code> is off. After the viewer opens, this page appends
+          <code>getToolbar().element</code> and <code>getLayerUI().element</code> into the panel below (same nodes the
+          built-in layout would host).
+        </p>
+        <p>
+          In a real app, bundle or link osd-paperjs-annotation styles (for example
+          <code>annotationui.css</code> and <code>editablecontent.css</code>) wherever you mount these nodes.
+        </p>
+        <div id="annotation-chrome" class="demo-chrome-mount demo-chrome-surface"></div>
+      </aside>
+    </div>
+
+    <script src="/test/demo/assets/demo-tiles.js"></script>
+    <script src="/dist/osdplus.min.js"></script>
+    <script src="/test/demo/assets/nav.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        const viewer = new OSDPlus({
+          id: 'viewer',
+          crossOriginPolicy: 'Anonymous',
+          tileSources: window.OSDPLUS_DEMO_TILE_SOURCE,
+          paperOverlays: {
+            annotationToolkit: {
+              toolbar: false,
+              layerUI: false,
+              layout: false,
+            },
+          },
+        });
+
+        viewer.addOnceHandler('open', () => {
+          const tk = viewer.annotationToolkit;
+          const host = document.getElementById('annotation-chrome');
+          if (!tk || !host) return;
+
+          const toolbar = tk.getToolbar();
+          const layerUI = tk.getLayerUI();
+          if (toolbar?.element) {
+            host.appendChild(toolbar.element);
+            toolbar.show?.();
+          }
+          if (layerUI?.element) {
+            host.appendChild(layerUI.element);
+            layerUI.show?.();
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OSDPlus demos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/test/demo/assets/common.css" />
+  </head>
+  <body>
+    <div class="hub">
+      <h1>OSDPlus demos</h1>
+      <p>
+        These pages are simple, opt-in examples. The hub does not start a viewer; each demo page does.
+      </p>
+
+      <div class="demo-grid" role="list">
+        <a class="demo-card" role="listitem" href="/test/demo/basic-viewer.html">
+          <div class="demo-card-title">Basic viewer</div>
+          <div class="demo-card-desc">
+            OpenSeadragon-style baseline: <code>new OSDPlus({...})</code> with no overlays enabled.
+          </div>
+        </a>
+
+        <a class="demo-card" role="listitem" href="/test/demo/annotation-toolkit.html">
+          <div class="demo-card-title">AnnotationToolkit (stock UI)</div>
+          <div class="demo-card-desc">
+            Opt in with <code>paperOverlays.annotationToolkit</code> and enable <code>toolbar</code>,
+            <code>layerUI</code>, and <code>layout</code>.
+          </div>
+        </a>
+
+        <a class="demo-card" role="listitem" href="/test/demo/annotation-toolkit-custom-ui.html">
+          <div class="demo-card-title">AnnotationToolkit (custom UI)</div>
+          <div class="demo-card-desc">
+            No stock layout; mount <code>getToolbar().element</code> and <code>getLayerUI().element</code> yourself.
+          </div>
+        </a>
+
+        <a class="demo-card" role="listitem" href="/test/demo/annotation-toolkit-events.html">
+          <div class="demo-card-title">AnnotationToolkit (events)</div>
+          <div class="demo-card-desc">
+            Project <code>tk.on</code> / <code>tk.off</code> and toolkit <code>addHandler</code> with
+            <code>events.toolkit</code>.
+          </div>
+        </a>
+
+        <a class="demo-card" role="listitem" href="/test/demo/annotation-toolkit-toolbar-tools.html">
+          <div class="demo-card-title">AnnotationToolkit (toolbar subset)</div>
+          <div class="demo-card-desc">
+            Pass <code>toolbar: { tools: [...] }</code> instead of mirroring each upstream tool demo.
+          </div>
+        </a>
+
+        <a class="demo-card" role="listitem" href="/test/demo/screenshot-overlay.html">
+          <div class="demo-card-title">ScreenshotOverlay</div>
+          <div class="demo-card-desc">Opt in with <code>paperOverlays.screenshot</code></div>
+        </a>
+
+        <a class="demo-card" role="listitem" href="/test/demo/field-of-view-overlay.html">
+          <div class="demo-card-title">FieldOfViewOverlay</div>
+          <div class="demo-card-desc">Opt in with <code>paperOverlays.fieldOfView</code></div>
+        </a>
+
+        <a class="demo-card" role="listitem" href="/test/demo/rotation-control-overlay.html">
+          <div class="demo-card-title">RotationControlOverlay</div>
+          <div class="demo-card-desc">Opt in with <code>paperOverlays.rotationControl</code></div>
+        </a>
+
+        <a class="demo-card" role="listitem" href="/test/demo/configuration-widget.html">
+          <div class="demo-card-title">ConfigurationWidget</div>
+          <div class="demo-card-desc">
+            Gear dialog, persistence, overlays + <code>addSection</code> gamma/vibrance (WebGL drawer).
+          </div>
+        </a>
+
+        <a class="demo-card" role="listitem" href="/test/demo/all-overlays.html">
+          <div class="demo-card-title">All overlays</div>
+          <div class="demo-card-desc">
+            Configuration widget plus annotation, FOV, screenshot, rotation; explicit
+            <code>paperOverlays.order</code>.
+          </div>
+        </a>
+
+        <a class="demo-card" role="listitem" href="/test/demo/gamma-vibrance-comparison.html">
+          <div class="demo-card-title">Gamma/vibrance (OSD4 plugin vs OSD6 shader)</div>
+          <div class="demo-card-desc">
+            Side-by-side iframes: OpenSeadragon 4.1.0 + filtering plugin-style processor vs OpenSeadragon 6 WebGLDrawer
+            subclass with shader uniforms.
+          </div>
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

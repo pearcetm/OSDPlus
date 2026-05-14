@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OSDPlus demo: basic viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/test/demo/assets/common.css" />
+  </head>
+  <body>
+    <div id="viewer" class="viewer"></div>
+
+    <script src="/test/demo/assets/demo-tiles.js"></script>
+    <script src="/dist/osdplus.min.js"></script>
+    <script src="/test/demo/assets/nav.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        // Baseline: no overlays enabled.
+        const viewer = new OSDPlus({
+          id: 'viewer',
+          crossOriginPolicy: 'Anonymous',
+          tileSources: window.OSDPLUS_DEMO_TILE_SOURCE,
+        });
+        void viewer;
+      });
+    </script>
+  </body>
+</html>

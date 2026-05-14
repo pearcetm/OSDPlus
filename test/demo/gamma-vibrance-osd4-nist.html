@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OSD 4.1.0 + filtering plugin (gamma/vibrance)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/test/demo/assets/common.css" />
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      .pane {
+        height: 100%;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+      .header {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        font-size: 12px;
+        padding: 8px 10px;
+        background: rgba(0, 0, 0, 0.04);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+      }
+      #viewer {
+        min-height: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="pane">
+      <div class="header">OSD 4.1.0 + OpenSeadragonFiltering-style processors (CPU)</div>
+      <div id="viewer" class="viewer"></div>
+    </div>
+
+    <script src="/test/demo/assets/demo-tiles.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/openseadragon@4.1.0/build/openseadragon/openseadragon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/usnistgov/OpenSeadragonFiltering@master/openseadragon-filtering.js"></script>
+    <script>
+      function clamp(v, min, max) {
+        return Math.min(max, Math.max(min, v));
+      }
+
+      function applyGammaVibranceCPU(context, gamma, vibrance) {
+        const canvas = context.canvas;
+        const w = canvas.width;
+        const h = canvas.height;
+        if (!w || !h) return;
+
+        const img = context.getImageData(0, 0, w, h);
+        const d = img.data;
+
+        const g = Math.max(0.0001, gamma);
+        const vib = clamp(vibrance, -1, 1);
+
+        for (let i = 0; i < d.length; i += 4) {
+          let r = d[i] / 255;
+          let gg = d[i + 1] / 255;
+          let b = d[i + 2] / 255;
+
+          // Vibrance heuristic: boost saturation more for muted colors.
+          const lum = 0.2126 * r + 0.7152 * gg + 0.0722 * b;
+          const dr = r - lum;
+          const dg = gg - lum;
+          const db = b - lum;
+
+          const mx = Math.max(r, gg, b);
+          const mn = Math.min(r, gg, b);
+          const sat = mx - mn;
+          const muted = 1 - clamp(sat, 0, 1);
+          const amount = vib * muted;
+
+          r = clamp(lum + dr * (1 + amount), 0, 1);
+          gg = clamp(lum + dg * (1 + amount), 0, 1);
+          b = clamp(lum + db * (1 + amount), 0, 1);
+
+          // Gamma (encoded-space approximation).
+          r = Math.pow(r, 1 / g);
+          gg = Math.pow(gg, 1 / g);
+          b = Math.pow(b, 1 / g);
+
+          d[i] = Math.round(clamp(r, 0, 1) * 255);
+          d[i + 1] = Math.round(clamp(gg, 0, 1) * 255);
+          d[i + 2] = Math.round(clamp(b, 0, 1) * 255);
+        }
+
+        context.putImageData(img, 0, 0);
+      }
+
+      window.addEventListener('DOMContentLoaded', () => {
+        const viewer = OpenSeadragon({
+          id: 'viewer',
+          crossOriginPolicy: 'Anonymous',
+          tileSources: window.OSDPLUS_DEMO_TILE_SOURCE,
+        });
+
+        let state = { gamma: 1, vibrance: 0 };
+
+        function updateFilters() {
+          const gamma = state.gamma;
+          const vibrance = state.vibrance;
+          viewer.setFilterOptions({
+            filters: {
+              processors: function (context, callback) {
+                applyGammaVibranceCPU(context, gamma, vibrance);
+                callback();
+              },
+            },
+            loadMode: 'sync',
+          });
+        }
+
+        window.addEventListener('message', (e) => {
+          if (e.origin !== window.location.origin) return;
+          if (e.data?.type !== 'setGammaVibrance') return;
+          state = { gamma: Number(e.data.gamma), vibrance: Number(e.data.vibrance) };
+          updateFilters();
+        });
+
+        viewer.addOnceHandler('open', () => {
+          updateFilters();
+          window.parent?.postMessage({ type: 'ready-osd4' }, window.location.origin);
+        });
+      });
+    </script>
+  </body>
+</html>
+

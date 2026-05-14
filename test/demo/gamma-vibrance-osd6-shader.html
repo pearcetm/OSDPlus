@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OSD 6 + GammaVibranceWebGLDrawer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/test/demo/assets/common.css" />
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      .pane {
+        height: 100%;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+      .header {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        font-size: 12px;
+        padding: 8px 10px;
+        background: rgba(0, 0, 0, 0.04);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+      }
+      #viewer {
+        min-height: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="pane">
+      <div class="header">OSD 6 WebGLDrawer subclass (shader uniforms)</div>
+      <div id="viewer" class="viewer"></div>
+    </div>
+
+    <script src="/test/demo/assets/demo-tiles.js"></script>
+    <script src="/dist/osdplus.min.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        const viewer = new OSDPlus({
+          id: 'viewer',
+          crossOriginPolicy: 'Anonymous',
+          tileSources: window.OSDPLUS_DEMO_TILE_SOURCE,
+          drawer: [GammaVibranceWebGLDrawer, 'canvas'],
+          drawerOptions: {
+            gamma: 1.0,
+            vibrance: 0.0,
+          },
+        });
+
+        window.addEventListener('message', (e) => {
+          if (e.origin !== window.location.origin) return;
+          if (e.data?.type !== 'setGammaVibrance') return;
+          const g = Number(e.data.gamma);
+          const v = Number(e.data.vibrance);
+          viewer.drawer?.setGammaVibrance?.({ gamma: g, vibrance: v });
+        });
+
+        viewer.addOnceHandler('open', () => {
+          window.parent?.postMessage({ type: 'ready-osd6' }, window.location.origin);
+        });
+      });
+    </script>
+  </body>
+</html>
+

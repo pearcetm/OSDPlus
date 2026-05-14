@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OSDPlus demo: ConfigurationWidget + overlays + display section</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/test/demo/assets/common.css" />
+    <style>
+      .display-section {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        font-size: 13px;
+      }
+      .display-section label {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+      .display-section input[type='range'] {
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="viewer" class="viewer"></div>
+
+    <script src="/test/demo/assets/demo-tiles.js"></script>
+    <script src="/dist/osdplus.min.js"></script>
+    <script src="/test/demo/assets/nav.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        const viewer = new OSDPlus({
+          id: 'viewer',
+          crossOriginPolicy: 'Anonymous',
+          tileSources: window.OSDPLUS_DEMO_TILE_SOURCE,
+          drawer: [GammaVibranceWebGLDrawer, 'canvas'],
+          drawerOptions: { gamma: 1.0, vibrance: 0.0 },
+          paperOverlays: {
+            configurationWidget: { storageKey: 'osdplus-demo-config' },
+            annotationToolkit: { toolbar: true, layerUI: true, layout: true },
+            fieldOfView: true,
+            screenshot: true,
+            rotationControl: true,
+            order: ['annotationToolkit', 'fieldOfView', 'screenshot', 'rotationControl'],
+          },
+        });
+
+        viewer.addOnceHandler('open', () => {
+          const cw = viewer.configurationWidget;
+          if (!cw) return;
+
+          const root = document.createElement('div');
+          root.className = 'display-section';
+
+          const gammaWrap = document.createElement('div');
+          const gammaLabel = document.createElement('label');
+          const gammaSpan = document.createElement('span');
+          gammaSpan.textContent = '1.00';
+          gammaLabel.appendChild(document.createTextNode('Gamma '));
+          gammaLabel.appendChild(gammaSpan);
+          const gamma = document.createElement('input');
+          gamma.type = 'range';
+          gamma.min = '0.2';
+          gamma.max = '3';
+          gamma.step = '0.01';
+          gamma.value = '1';
+          gamma.addEventListener('input', () => {
+            const v = Number(gamma.value);
+            gammaSpan.textContent = v.toFixed(2);
+            viewer.drawer?.setGamma?.(v);
+          });
+          gammaWrap.appendChild(gammaLabel);
+          gammaWrap.appendChild(gamma);
+          root.appendChild(gammaWrap);
+
+          const vibWrap = document.createElement('div');
+          const vibLabel = document.createElement('label');
+          const vibSpan = document.createElement('span');
+          vibSpan.textContent = '0.00';
+          vibLabel.appendChild(document.createTextNode('Vibrance '));
+          vibLabel.appendChild(vibSpan);
+          const vib = document.createElement('input');
+          vib.type = 'range';
+          vib.min = '-1';
+          vib.max = '1';
+          vib.step = '0.01';
+          vib.value = '0';
+          vib.addEventListener('input', () => {
+            const v = Number(vib.value);
+            vibSpan.textContent = v.toFixed(2);
+            viewer.drawer?.setVibrance?.(v);
+          });
+          vibWrap.appendChild(vibLabel);
+          vibWrap.appendChild(vib);
+          root.appendChild(vibWrap);
+
+          cw.addSection('Display', root);
+        });
+      });
+    </script>
+  </body>
+</html>

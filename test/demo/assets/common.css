@@ -1,0 +1,358 @@
+:root {
+  --page-bg: #0b0d12;
+  --panel-bg: rgba(20, 24, 34, 0.92);
+  --card-bg: rgba(255, 255, 255, 0.06);
+  --card-bg-hover: rgba(255, 255, 255, 0.09);
+  --border: rgba(255, 255, 255, 0.12);
+  --text: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.72);
+  --link: #9fcdff;
+  --link-visited: #c7b3ff;
+  --focus: rgba(159, 205, 255, 0.8);
+  --code-bg: rgba(255, 255, 255, 0.08);
+  --code-border: rgba(255, 255, 255, 0.12);
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji',
+    'Segoe UI Emoji';
+}
+
+/*
+ * Demo pages (nav.js adds .with-topbar): keep the bar and viewer in one viewport-sized grid so
+ * nothing scrolls “under” the topbar. Row 1 = chrome, row 2 = viewer or hub.
+ */
+body.with-topbar {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: minmax(0, 1fr);
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+body.with-topbar > .topbar {
+  position: relative;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: stretch;
+}
+
+body.with-topbar > *:not(.topbar) {
+  grid-column: 1;
+  grid-row: 2;
+  min-height: 0;
+  position: relative;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+/* Allow the hub content to scroll within row 2. */
+body.with-topbar .hub {
+  height: 100%;
+  overflow: auto;
+  box-sizing: border-box;
+}
+
+/* Global link + focus system (hub + demos) */
+a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+a:visited {
+  color: var(--link-visited);
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 0.92em;
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 2px 6px;
+  border-radius: 6px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+pre {
+  max-width: 100%;
+  overflow: auto;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  color: var(--text);
+  line-height: 1.35;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+pre code {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  z-index: 1;
+}
+
+.topbar a {
+  text-decoration: none;
+}
+
+.topbar .title {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.page {
+  height: 100%;
+}
+
+.hub {
+  padding: 20px 18px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.hub h1 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+}
+
+.hub p {
+  margin: 0 0 16px 0;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.demo-card {
+  display: block;
+  padding: 14px 14px 12px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  text-decoration: none;
+  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+  overflow: hidden;
+}
+
+.demo-card:hover {
+  background: var(--card-bg-hover);
+  border-color: rgba(255, 255, 255, 0.18);
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.demo-card:visited {
+  color: var(--text);
+}
+
+.demo-card-title {
+  color: var(--text);
+  font-weight: 650;
+  letter-spacing: 0.2px;
+  margin-bottom: 6px;
+}
+
+.demo-card-desc {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.viewer {
+  height: 100%;
+}
+
+/* In-flow sizing: absolute + inset would anchor to the wrong containing block and paint over the topbar. */
+body.with-topbar > #viewer {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+/* Split viewer + custom chrome (annotation-toolkit-custom-ui) */
+.with-topbar .demo-split-root {
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.demo-split-viewer {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.demo-split-viewer #viewer {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: auto; /* override .viewer height:100% so flex:1 supplies the used height */
+  box-sizing: border-box;
+}
+
+.demo-chrome-panel {
+  width: min(320px, 42vw);
+  flex-shrink: 0;
+  overflow: auto;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  background: var(--panel-bg);
+  border-left: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.demo-chrome-panel h2 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.demo-chrome-mount {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.demo-chrome-mount > * {
+  max-width: 100%;
+}
+
+/* Light surface for upstream annotation toolbar / layer UI (expects dark text). */
+.demo-chrome-surface {
+  color-scheme: light;
+  background: #eceef2;
+  color: #121519;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.demo-chrome-surface a {
+  color: #0b57d0;
+}
+
+.demo-chrome-surface a:visited {
+  color: #5b21b6;
+}
+
+/* Events demo: viewer + log */
+.with-topbar .demo-events-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.demo-events-viewer {
+  flex: 1 1 45%;
+  min-height: 160px;
+  position: relative;
+}
+
+.demo-events-viewer #viewer {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.demo-events-panel {
+  flex: 1 1 40%;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px;
+  box-sizing: border-box;
+  border-top: 1px solid var(--border);
+  background: var(--page-bg);
+  gap: 8px;
+}
+
+.demo-events-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.demo-events-panel .event-log {
+  flex: 1;
+  margin: 0;
+  min-height: 80px;
+  max-height: 42vh;
+  overflow: auto;
+  font-size: 12px;
+}
+
+.demo-events-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+button.demo-btn {
+  font: inherit;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+}
+
+button.demo-btn:hover {
+  background: var(--card-bg-hover);
+}
+
+button.demo-btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}

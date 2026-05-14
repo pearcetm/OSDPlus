@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OSDPlus demo: AnnotationToolkit event hooks</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/test/demo/assets/common.css" />
+  </head>
+  <body>
+    <div class="demo-events-root">
+      <div class="demo-events-viewer">
+        <div id="viewer" class="viewer"></div>
+      </div>
+      <section class="demo-events-panel" aria-label="Event log">
+        <p class="demo-events-hint">
+          Mirrors upstream
+          <a href="https://pearcetm.github.io/osd-paperjs-annotation/demo/listener-api.html">listener-api</a>:
+          <strong>Project hooks</strong> use <code>annotationToolkit.on(name, fn)</code> /
+          <code>.off(name, fn)</code> (same as <code>paperScope.project</code>). With
+          <code>events: { toolkit: true }</code>, <code>annotationToolkit.addHandler(name, fn)</code> /
+          <code>.removeHandler(name, fn)</code> receives the same integration event names on the toolkit object.
+        </p>
+        <div class="demo-events-controls">
+          <button type="button" class="demo-btn" id="evt-subscribe">Subscribe</button>
+          <button type="button" class="demo-btn" id="evt-unsubscribe" disabled>Unsubscribe</button>
+          <button type="button" class="demo-btn" id="evt-clear">Clear log</button>
+        </div>
+        <pre id="event-log" class="event-log" aria-live="polite"></pre>
+      </section>
+    </div>
+
+    <script src="/test/demo/assets/demo-tiles.js"></script>
+    <script src="/dist/osdplus.min.js"></script>
+    <script src="/test/demo/assets/nav.js"></script>
+    <script>
+      const CORE_EVENTS = [
+        'active-tool-changed',
+        'tool-activated',
+        'tool-deactivated',
+        'mode-changed',
+        'selection-changed',
+        'item-selected',
+        'item-deselected',
+        'items-changed',
+      ];
+
+      const logEl = document.getElementById('event-log');
+      const subBtn = document.getElementById('evt-subscribe');
+      const unsubBtn = document.getElementById('evt-unsubscribe');
+      const clearBtn = document.getElementById('evt-clear');
+
+      /** @type {any} */
+      let viewer = null;
+
+      /** @type {Array<{ kind: 'on' | 'handler', name: string, fn: Function }>} */
+      let attached = [];
+
+      function safeStringify(v) {
+        try {
+          return JSON.stringify(
+            v,
+            (k, val) => {
+              if (k === 'tool' || k === 'fromTool' || k === 'toTool') {
+                return val?.toolName || val?.constructor?.name || '[tool]';
+              }
+              if (k === 'primary' && val && val.id != null) {
+                return { id: val.id, name: val.name, toolName: val.toolName };
+              }
+              return val;
+            },
+            2,
+          );
+        } catch {
+          return String(v);
+        }
+      }
+
+      function appendLine(source, name, payload) {
+        if (!logEl) return;
+        const ts = new Date().toLocaleTimeString();
+        const line = `[${ts}] ${source} ${name}\n${safeStringify(payload)}\n\n`;
+        logEl.textContent += line;
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function subscribe() {
+        const tk = viewer?.annotationToolkit;
+        if (!tk || attached.length) return;
+
+        CORE_EVENTS.forEach((name) => {
+          const onFn = (payload) => appendLine('project', name, payload);
+          tk.on(name, onFn);
+          attached.push({ kind: 'on', name, fn: onFn });
+
+          if (typeof tk.addHandler === 'function') {
+            const hFn = (e) => appendLine('toolkit', name, e);
+            tk.addHandler(name, hFn);
+            attached.push({ kind: 'handler', name, fn: hFn });
+          }
+        });
+
+        subBtn.disabled = true;
+        unsubBtn.disabled = false;
+      }
+
+      function unsubscribe() {
+        const tk = viewer?.annotationToolkit;
+        if (!tk) return;
+
+        for (const row of attached) {
+          if (row.kind === 'on') tk.off(row.name, row.fn);
+          else if (row.kind === 'handler' && typeof tk.removeHandler === 'function') tk.removeHandler(row.name, row.fn);
+        }
+        attached = [];
+        subBtn.disabled = false;
+        unsubBtn.disabled = true;
+      }
+
+      window.addEventListener('DOMContentLoaded', () => {
+        viewer = new OSDPlus({
+          id: 'viewer',
+          crossOriginPolicy: 'Anonymous',
+          tileSources: window.OSDPLUS_DEMO_TILE_SOURCE,
+          paperOverlays: {
+            annotationToolkit: {
+              toolbar: true,
+              layerUI: true,
+              layout: true,
+              events: { project: true, toolkit: true },
+            },
+          },
+        });
+
+        subBtn.addEventListener('click', subscribe);
+        unsubBtn.addEventListener('click', unsubscribe);
+        clearBtn.addEventListener('click', () => {
+          if (logEl) logEl.textContent = '';
+        });
+      });
+    </script>
+  </body>
+</html>

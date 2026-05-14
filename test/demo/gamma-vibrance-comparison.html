@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OSDPlus demo: gamma/vibrance comparison</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/test/demo/assets/common.css" />
+    <style>
+      .comparison {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        gap: 12px;
+        height: 100vh;
+        padding: 12px;
+        box-sizing: border-box;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .control {
+        background: rgba(0, 0, 0, 0.06);
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: 8px;
+        padding: 10px;
+      }
+
+      .control label {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        font-size: 13px;
+        margin-bottom: 8px;
+      }
+
+      .frames {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        min-height: 0;
+      }
+
+      iframe {
+        width: 100%;
+        height: 100%;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: 8px;
+        background: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="comparison">
+      <div class="controls">
+        <div class="control">
+          <label for="gamma">
+            <span>Gamma</span>
+            <span id="gamma-value">1.00</span>
+          </label>
+          <input id="gamma" type="range" min="0.2" max="3.0" step="0.01" value="1.0" />
+        </div>
+        <div class="control">
+          <label for="vibrance">
+            <span>Vibrance</span>
+            <span id="vibrance-value">0.00</span>
+          </label>
+          <input id="vibrance" type="range" min="-1.0" max="1.0" step="0.01" value="0.0" />
+        </div>
+      </div>
+
+      <div class="frames">
+        <iframe id="osd4" title="OpenSeadragon 4.1.0 + NIST plugin" src="/test/demo/gamma-vibrance-osd4-nist.html"></iframe>
+        <iframe id="osd6" title="OpenSeadragon 6 + shader drawer" src="/test/demo/gamma-vibrance-osd6-shader.html"></iframe>
+      </div>
+    </div>
+
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        const osd4 = document.getElementById('osd4');
+        const osd6 = document.getElementById('osd6');
+
+        const gamma = document.getElementById('gamma');
+        const vibrance = document.getElementById('vibrance');
+        const gammaValue = document.getElementById('gamma-value');
+        const vibranceValue = document.getElementById('vibrance-value');
+
+        let ready4 = false;
+        let ready6 = false;
+        let pending = null;
+
+        function current() {
+          return {
+            gamma: Number(gamma.value),
+            vibrance: Number(vibrance.value),
+          };
+        }
+
+        function updateLabels() {
+          const v = current();
+          gammaValue.textContent = v.gamma.toFixed(2);
+          vibranceValue.textContent = v.vibrance.toFixed(2);
+        }
+
+        function broadcast() {
+          const v = current();
+          const msg = { type: 'setGammaVibrance', ...v };
+          pending = msg;
+          updateLabels();
+
+          if (ready4 && osd4?.contentWindow) osd4.contentWindow.postMessage(msg, window.location.origin);
+          if (ready6 && osd6?.contentWindow) osd6.contentWindow.postMessage(msg, window.location.origin);
+        }
+
+        window.addEventListener('message', (e) => {
+          if (e.origin !== window.location.origin) return;
+          const t = e.data?.type;
+          const becameReady = t === 'ready-osd4' || t === 'ready-osd6';
+          if (t === 'ready-osd4') ready4 = true;
+          if (t === 'ready-osd6') ready6 = true;
+
+          // Only push the latest pending values when a frame becomes ready.
+          // Otherwise we risk creating a feedback loop if an iframe posts unrelated messages.
+          if (becameReady && pending) {
+            if (ready4 && osd4?.contentWindow) osd4.contentWindow.postMessage(pending, window.location.origin);
+            if (ready6 && osd6?.contentWindow) osd6.contentWindow.postMessage(pending, window.location.origin);
+          }
+        });
+
+        gamma.addEventListener('input', broadcast);
+        vibrance.addEventListener('input', broadcast);
+
+        updateLabels();
+        broadcast();
+      });
+    </script>
+  </body>
+</html>
+
