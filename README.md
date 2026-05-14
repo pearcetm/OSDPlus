@@ -52,6 +52,37 @@ const viewer = new OSDPlus({
 
 Types: `OSDPlusOptions`, `PaperOverlaysOptions`, `PaperOverlaysOrderItem`, `ConfigurationWidgetOptions`, `RotationControlOverlayOptions`.
 
+### OpenSeadragon re-export
+
+Use the same OpenSeadragon instance the package depends on (subclass `TileSource`, access enums, use helpers, etc.):
+
+```ts
+import { OSDPlus, OpenSeadragon } from 'osdplus';
+
+class MyTileSource extends OpenSeadragon.TileSource {
+  constructor(width: number, height: number, tileSize: number, tileOverlap: number, minLevel: number, maxLevel: number) {
+    super({ width, height, tileSize, tileOverlap, minLevel, maxLevel });
+  }
+  // ...
+}
+```
+
+`openseadragon` remains a dependency of `osdplus`; listing it as a **direct** dependency in your app is optional but gives you an explicit semver pin in larger projects.
+
+### osd-paperjs-annotation: named exports and `OSDPaperjsAnnotation`
+
+`osdplus` re-exports the main overlay and toolkit symbols (`AnnotationToolkit`, `ConfigurationWidget`, overlays, `attachAnnotationToolkitConfigurationWidget`, …). For other upstream entry points (e.g. `ToolBase`, `AnnotationLayout`, `LayerUI`), import the **`OSDPaperjsAnnotation`** namespace object from `osdplus` and read properties off it at runtime (same shape as upstream’s script-tag `OSDPaperjsAnnotation`):
+
+```ts
+import { OSDPaperjsAnnotation } from 'osdplus';
+
+// Runtime access to upstream classes not individually re-exported from osdplus:
+const ToolBase = OSDPaperjsAnnotation.ToolBase;
+const AnnotationLayout = OSDPaperjsAnnotation.AnnotationLayout;
+```
+
+Nested keys are not strongly typed on `OSDPaperjsAnnotation` in this package’s shims; for full typings you can still import from `'osd-paperjs-annotation'` alongside `osdplus` if your bundler resolves one copy.
+
 ### Configuration widget: custom sections (e.g. gamma / vibrance)
 
 `ConfigurationWidget#addSection(label, element)` appends a block to the gear dialog. With `GammaVibranceWebGLDrawer` as the viewer drawer, wire range inputs to `setGamma` / `setVibrance` (or `setGammaVibrance`). See [test/demo/configuration-widget.html](test/demo/configuration-widget.html).
@@ -149,7 +180,7 @@ Open **http://localhost:8080/test/demo/** for the demo hub. Each viewer page loa
 
 ## IIFE globals
 
-The IIFE defines **`OSDPlus`** and also attaches osd-paperjs-annotation exports (e.g. `AnnotationToolkit`, `ConfigurationWidget`, `ScreenshotOverlay`, `FieldOfViewOverlay`, `RotationControlOverlay`, `attachAnnotationToolkitConfigurationWidget`, etc.) to `window`/`globalThis`, matching the upstream script-tag ergonomics. Avoid loading both standalone osd-paperjs-annotation and the osdplus IIFE on the same page.
+The IIFE defines **`OSDPlus`** (default export / `globalName`), attaches **`OpenSeadragon`** to `window`/`globalThis`, and copies osd-paperjs-annotation exports (e.g. `AnnotationToolkit`, `ConfigurationWidget`, `ScreenshotOverlay`, `FieldOfViewOverlay`, `RotationControlOverlay`, `attachAnnotationToolkitConfigurationWidget`, etc.) the same way. Avoid loading both standalone osd-paperjs-annotation and the osdplus IIFE on the same page.
 
 ## Licenses
 

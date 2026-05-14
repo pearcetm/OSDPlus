@@ -1,3 +1,4 @@
+export { default as OpenSeadragon } from 'openseadragon';
 export { OSDPlus } from './osdplus';
 export type {
   ConfigurationWidgetOptions,

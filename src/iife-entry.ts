@@ -1,3 +1,4 @@
+import OpenSeadragon from 'openseadragon';
 import { OSDPlus } from './osdplus';
 import * as Annotation from 'osd-paperjs-annotation';
 import { GammaVibranceWebGLDrawer } from './drawers/GammaVibranceWebGLDrawer';
@@ -14,4 +15,5 @@ if (typeof globalThis !== 'undefined') {
     g[key] = value;
   }
   g.GammaVibranceWebGLDrawer = GammaVibranceWebGLDrawer;
+  g.OpenSeadragon = OpenSeadragon;
 }
