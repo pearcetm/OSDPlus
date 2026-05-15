@@ -38,17 +38,19 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node scripts/copy-opa-vendor.mjs",
     "prepublishOnly": "npm run build",
     "demo": "npm run build && serve -l 8080 .",
     "test": "npm run build"
   },
   "dependencies": {
-    "openseadragon": "^6.0.2",
+    "openseadragon": "5.0.1",
     "osd-paperjs-annotation": "^0.7.1"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
+    "@types/openseadragon": "^5.0.1",
+    "esbuild": "^0.25.0",
     "serve": "^14.2.5",
     "tsup": "^8.5.1",
     "typescript": "^6.0.3"

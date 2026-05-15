@@ -12,8 +12,8 @@ type DrawerCtorOptions = {
 };
 
 /**
- * Minimal surface of OpenSeadragon’s internal WebglContextManager (not exported by OSD typings).
- * Keep in sync with OSD WebGL renderer module when upgrading OpenSeadragon.
+ * Minimal surface of OpenSeadragon’s internal WebglContextManager (OSD 6+; not exported by typings).
+ * OSD 5.x stores `_gl`, `_firstPass`, and `_unitQuad` on the drawer instead.
  */
 interface OsdWebglContextManagerLike {
   getContext?: () => WebGLRenderingContext | WebGL2RenderingContext | null;
@@ -30,12 +30,25 @@ interface OsdWebglContextManagerLike {
 
 interface OsdStockFirstPass {
   shaderProgram?: WebGLProgram;
-  bufferOutputPosition?: WebGLBuffer;
-  bufferTexturePosition?: WebGLBuffer;
-  bufferIndex?: WebGLBuffer;
+  aOutputPosition?: number;
+  aTexturePosition?: number;
+  aIndex?: number;
+  uGamma?: WebGLUniformLocation | null;
+  uVibrance?: WebGLUniformLocation | null;
+  uImages?: WebGLUniformLocation | null;
+  bufferOutputPosition?: WebGLBuffer | null;
+  bufferTexturePosition?: WebGLBuffer | null;
+  bufferIndex?: WebGLBuffer | null;
 }
 
-type DrawerWithGlContext = OpenSeadragon.WebGLDrawer & { _glContext?: OsdWebglContextManagerLike | null };
+/** Runtime fields on {@link OpenSeadragon.WebGLDrawer} (OSD 5.x layout; partial). */
+type WebGLDrawerInternals = {
+  viewer: OpenSeadragon.Viewer;
+  _gl?: WebGLRenderingContext | WebGL2RenderingContext | null;
+  _firstPass?: OsdStockFirstPass;
+  _unitQuad?: Float32Array;
+  _glContext?: OsdWebglContextManagerLike | null;
+};
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -185,10 +198,9 @@ export class GammaVibranceWebGLDrawer extends OpenSeadragon.WebGLDrawer {
     if (values.gamma !== undefined) this._gamma = this._normalizeGamma(values.gamma);
     if (values.vibrance !== undefined) this._vibrance = this._normalizeVibrance(values.vibrance);
     this._applyUniforms();
-    (this.viewer as unknown as { forceRedraw?: () => void }).forceRedraw?.();
+    this._internals().viewer.forceRedraw?.();
   }
 
-  // OSD `_resizeRenderer` only calls `WebglContextManager.resizeRenderer` (FBO resize); it does not rebuild shaders.
   // `_recreateContext` calls `_setupRenderer()` again, which re-runs this hook.
   // eslint-disable-next-line @typescript-eslint/naming-convention
   _setupRenderer(): void {
@@ -197,8 +209,38 @@ export class GammaVibranceWebGLDrawer extends OpenSeadragon.WebGLDrawer {
     this._applyUniforms();
   }
 
+  private _internals(): WebGLDrawerInternals {
+    return this as unknown as WebGLDrawerInternals;
+  }
+
   private _contextManager(): OsdWebglContextManagerLike | null {
-    return (this as unknown as DrawerWithGlContext)._glContext ?? null;
+    const internal = this._internals();
+    if (internal._glContext) {
+      return internal._glContext;
+    }
+    const gl = internal._gl;
+    if (!gl) {
+      return null;
+    }
+    return {
+      getContext: () => gl,
+      getFirstPass: () => internal._firstPass,
+      get _firstPass() {
+        return internal._firstPass;
+      },
+      set _firstPass(value: OsdStockFirstPass | undefined) {
+        internal._firstPass = value;
+      },
+      getUnitQuad: () => internal._unitQuad,
+      get _unitQuad() {
+        return internal._unitQuad;
+      },
+      _initShaderProgram: (
+        OpenSeadragon.WebGLDrawer as unknown as {
+          initShaderProgram: NonNullable<OsdWebglContextManagerLike['_initShaderProgram']>;
+        }
+      ).initShaderProgram,
+    };
   }
 
   private _setInstallFailed(status: Omit<GammaVibranceInstallStatus, 'installed'> & { reason: string }): void {

@@ -3,7 +3,7 @@ import { OSDPlus } from './osdplus';
 import * as Annotation from 'osd-paperjs-annotation';
 import { GammaVibranceWebGLDrawer } from './drawers/GammaVibranceWebGLDrawer';
 
-/** IIFE global (`globalName` in tsup) is this default export. */
+/** IIFE global (`globalName` in tsup) must be the constructor; see `footer` in tsup.config.ts for interop unwrap. */
 export default OSDPlus;
 
 // Mirror osd-paperjs-annotation's UMD behavior: attach named exports to the global object.

@@ -1,6 +1,8 @@
 # OSDPlus
 
-Single entry for an [OpenSeadragon](https://openseadragon.github.io/) viewer with [osd-paperjs-annotation](https://github.com/pearcetm/osd-paperjs-annotation) wired in. Install one package (or load one script from a CDN): you do **not** add separate script tags for OpenSeadragon, osd-paperjs-annotation, or Paper.js.
+Single entry for an [OpenSeadragon](https://openseadragon.github.io/) viewer with [osd-paperjs-annotation](https://github.com/pearcetm/osd-paperjs-annotation) wired in. OSDPlus currently pins **OpenSeadragon 5.0.1** (not 6.x): osd-paperjs-annotation v0.7.1’s rotation overlay and mouse navigation behave correctly on 5.x; OpenSeadragon 6.0.2 has tracker API changes that break deactivate/restore until upstream adapts.
+
+With **npm**, install one package and import `osdplus`—your bundler resolves OpenSeadragon **5.0.1** and osd-paperjs-annotation as dependencies. With **script tags**, load a single [`dist/osdplus.min.js`](dist/osdplus.min.js): the published IIFE prepends **OpenSeadragon 5.0.1** and a **verbatim** copy of osd-paperjs-annotation’s webpack bundle, then the slim app (see [CDN](#cdn-jsdelivr)). That keeps Paper.js safe (the app is not fed through esbuild) while staying a one-stop script for the browser.
 
 ```js
 const viewer = new OSDPlus({
@@ -17,7 +19,7 @@ const viewer = new OSDPlus({
 - `paperOverlays.annotationToolkit: true` (or `{}`) enables the toolkit **without** osd-paperjs-annotation’s stock chrome; set `toolbar`, `layerUI`, and/or `layout` to `true` (or option objects) for the built-in UI, or mount `getToolbar().element` / `getLayerUI().element` yourself after `open` (see local demos).
 - The IIIF URL above is the public [iiif.io](https://iiif.io/api/image/3.0/example/reference/) reference image service (`Access-Control-Allow-Origin: *`). Use `crossOriginPolicy: 'Anonymous'` for cross-origin tiles when canvas or Paper.js reads pixels. Local demos load the same URL via [test/demo/assets/demo-tiles.js](test/demo/assets/demo-tiles.js) as `window.OSDPLUS_DEMO_TILE_SOURCE`.
 - All options except `paperOverlays` are passed to OpenSeadragon (after stripping `paperOverlays`).
-- If you omit `prefixUrl`, OSDPlus sets it to the matching OpenSeadragon UI images on [jsDelivr](https://www.jsdelivr.com/) using `OpenSeadragon.version` at runtime (so one script tag is enough for demos).
+- If you omit `prefixUrl`, OSDPlus sets it to the matching OpenSeadragon UI images on [jsDelivr](https://www.jsdelivr.com/) using `OpenSeadragon.version` at runtime.
 
 ## Opt-in overlays
 
@@ -104,7 +106,7 @@ Persistence for annotation toolbar rows uses `ANNOTATION_TOOLBAR_PERSIST_ID_PENC
 
 ## Gamma/vibrance WebGL drawer (experimental)
 
-This package also exports `GammaVibranceWebGLDrawer`, a subclass of OpenSeadragon 6’s `WebGLDrawer` that applies
+This package also exports `GammaVibranceWebGLDrawer`, a subclass of OpenSeadragon 5’s `WebGLDrawer` that applies
 gamma and vibrance adjustments in a fragment shader (uniform-driven, intended for “close enough” parity).
 
 ```ts
@@ -128,7 +130,16 @@ Use `GammaVibranceWebGLDrawer#getGammaVibranceInstallStatus()` (typed as `GammaV
 
 ## CDN (jsDelivr)
 
-After publishing to npm, load the IIFE (global **`OSDPlus`** constructor):
+The browser file [`dist/osdplus.min.js`](dist/osdplus.min.js) is built as a **preamble + slim IIFE**:
+
+1. **Preamble** (prepended at build time, not transformed by esbuild): OpenSeadragon **5.0.1**’s published `openseadragon.js`, then osd-paperjs-annotation’s **`dist/main.js` verbatim** (same bytes as npm). Together they define everything on `globalThis` that Paper and the overlays expect.
+2. **Slim tail**: `globalName` **`OSDPlus`**, tree-shake off, minify off; it reads `openseadragon` and `osd-paperjs-annotation` from `globalThis` via virtual shims (nothing from upstream’s webpack blob is re-parsed by esbuild).
+
+So script-tag integration is **one** `<script src=".../osdplus.min.js">` after your tile/config scripts. The build also writes [`dist/osd-paperjs-annotation.vendor.js`](dist/osd-paperjs-annotation.vendor.js), a **standalone verbatim** copy of the same upstream `main.js` used in the preamble (for npm `files` or rare split-cache scenarios). Local demos use only the combined `osdplus.min.js`.
+
+**npm ESM/CJS** is unchanged: `import { OSDPlus } from 'osdplus'` still resolves the real packages through your bundler.
+
+After publishing to npm:
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/osdplus@1/dist/osdplus.min.js"></script>
@@ -145,7 +156,9 @@ After publishing to npm, load the IIFE (global **`OSDPlus`** constructor):
 </script>
 ```
 
-Short URL (uses the `jsdelivr` field in `package.json`):
+The file is large (~2 MB) by design (OpenSeadragon + upstream vendor + thin wrapper).
+
+Short URL for the IIFE (uses the `jsdelivr` field in `package.json`):
 
 ```text
 https://cdn.jsdelivr.net/npm/osdplus@1
@@ -162,7 +175,7 @@ npm install
 npm run demo
 ```
 
-Open **http://localhost:8080/test/demo/** for the demo hub. Each viewer page loads [test/demo/assets/demo-tiles.js](test/demo/assets/demo-tiles.js) for a shared CORS-friendly IIIF tile source.
+Open **http://localhost:8080/test/demo/** for the demo hub. Viewer demos load a single [`dist/osdplus.min.js`](dist/osdplus.min.js) (see each HTML file) plus [test/demo/assets/demo-tiles.js](test/demo/assets/demo-tiles.js) for a shared CORS-friendly IIIF tile source.
 
 ### Upstream osd-paperjs-annotation demos
 
@@ -180,7 +193,7 @@ Open **http://localhost:8080/test/demo/** for the demo hub. Each viewer page loa
 
 ## IIFE globals
 
-The IIFE defines **`OSDPlus`** (default export / `globalName`), attaches **`OpenSeadragon`** to `window`/`globalThis`, and copies osd-paperjs-annotation exports (e.g. `AnnotationToolkit`, `ConfigurationWidget`, `ScreenshotOverlay`, `FieldOfViewOverlay`, `RotationControlOverlay`, `attachAnnotationToolkitConfigurationWidget`, etc.) the same way. Avoid loading both standalone osd-paperjs-annotation and the osdplus IIFE on the same page.
+The combined [`dist/osdplus.min.js`](dist/osdplus.min.js) runs the **preamble** first (OpenSeadragon + osd-paperjs-annotation on `globalThis`), then the **slim** IIFE: it defines **`OSDPlus`** (`globalName`; a small footer unwraps the constructor if esbuild emits an interop object), ensures **`OpenSeadragon`** is on `globalThis`, and mirrors osd-paperjs-annotation named exports (e.g. `AnnotationToolkit`, `ConfigurationWidget`, `ScreenshotOverlay`, `FieldOfViewOverlay`, `RotationControlOverlay`, `attachAnnotationToolkitConfigurationWidget`, …) plus **`GammaVibranceWebGLDrawer`** for parity with the npm entry. Avoid loading another full copy of osd-paperjs-annotation’s bundle on the same page unless you know globals will not clash.
 
 ## Licenses
 
