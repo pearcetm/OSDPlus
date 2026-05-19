@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OSDPlus demo: ruler mpp → mm scale</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/test/demo/assets/common.css" />
+    <style>
+      body.with-topbar .ruler-mpp-root {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%;
+        position: relative;
+      }
+      body.with-topbar .ruler-mpp-root .viewer {
+        flex: 1;
+        min-height: 0;
+        height: auto;
+      }
+      .ruler-mpp-hint {
+        position: absolute;
+        left: 12px;
+        bottom: 12px;
+        z-index: 2;
+        margin: 0;
+        padding: 8px 12px;
+        font:
+          13px/1.4 system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          sans-serif;
+        color: #eee;
+        background: rgba(0, 0, 0, 0.55);
+        border-radius: 6px;
+        max-width: min(480px, calc(100% - 24px));
+        pointer-events: none;
+      }
+      .ruler-mpp-hint code {
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ruler-mpp-root">
+      <div id="viewer" class="viewer"></div>
+      <p class="ruler-mpp-hint" id="ruler-mpp-status">
+        Loading slide… ruler sync runs when tile source <code>ready</code> includes <code>mpp</code>.
+      </p>
+    </div>
+
+    <script src="/test/demo/assets/demo-tiles.js"></script>
+    <script src="/dist/osdplus.min.js"></script>
+    <script src="/test/demo/assets/nav.js"></script>
+    <script>
+      /**
+       * Wraps IIIF: defers `ready` until `mpp` is set (simulates SVS finishSetup).
+       */
+      function createDelayedMppIiifTileSource(iiifUrl, mpp, delayMs) {
+        const MppDelayedIiifTileSource = function (options) {
+          OpenSeadragon.TileSource.apply(this, [options]);
+        };
+        OpenSeadragon.extend(
+          MppDelayedIiifTileSource.prototype,
+          OpenSeadragon.TileSource.prototype,
+          {
+            supports: function (data) {
+              return !!(data && data.type === 'osdplus-mpp-demo');
+            },
+            configure: function (data) {
+              const self = this;
+              const deferred = OpenSeadragon.defer();
+              const inner = new OpenSeadragon.IIIFTileSource(data.iiifUrl || iiifUrl);
+              inner.addOnceHandler('ready', function () {
+                OpenSeadragon.extend(true, self, inner);
+                setTimeout(function () {
+                  self.mpp = { x: mpp.x, y: mpp.y };
+                  deferred.resolve(self);
+                }, delayMs);
+              });
+              inner.configure(data);
+              return deferred;
+            },
+          },
+        );
+        return new MppDelayedIiifTileSource({
+          type: 'osdplus-mpp-demo',
+          iiifUrl: iiifUrl,
+        });
+      }
+
+      window.addEventListener('DOMContentLoaded', () => {
+        const status = document.getElementById('ruler-mpp-status');
+        const DEMO_MPP = { x: 0.5, y: 0.5 };
+
+        const viewer = new OSDPlus({
+          id: 'viewer',
+          crossOriginPolicy: 'Anonymous',
+          tileSources: createDelayedMppIiifTileSource(
+            window.OSDPLUS_DEMO_TILE_SOURCE,
+            DEMO_MPP,
+            400,
+          ),
+          paperOverlays: {
+            annotationToolkit: {
+              toolbar: true,
+              layerUI: true,
+              layout: true,
+              ruler: {
+                syncPhysicalScaleFromTileSource: true,
+                displayUnit: 'mm',
+                decimals: 3,
+                roundingMode: 'truncate',
+              },
+            },
+          },
+        });
+
+        function updateStatus() {
+          const ruler = viewer.annotationToolkit?.getTool?.('ruler');
+          const tc = ruler?.getToolbarControl?.();
+          if (!tc) {
+            status.textContent = 'Ruler toolbar not available (enable toolbar + ruler in toolset).';
+            return;
+          }
+          const expected = DEMO_MPP.x / 1000;
+          status.innerHTML =
+            'Ruler: <code>' +
+            (tc.labelUnit || '?') +
+            '</code>, units/pixel <code>' +
+            Number(tc.unitsPerPixel).toExponential(3) +
+            '</code> (expected ≈ <code>' +
+            expected.toExponential(3) +
+            '</code> for mpp.x=0.5), decimals <code>' +
+            (tc.decimals ?? '?') +
+            '</code>, rounding <code>' +
+            (tc.roundingMode || '?') +
+            '</code>. Activate ruler, draw a segment — labels should be in mm with 3 decimal places (truncate).';
+        }
+
+        viewer.addHandler('open', updateStatus);
+        setTimeout(updateStatus, 800);
+      });
+    </script>
+  </body>
+</html>

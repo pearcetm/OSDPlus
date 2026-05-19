@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OSDPlus demo: multiple open()</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/test/demo/assets/common.css" />
+    <style>
+      .multi-open-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px 14px;
+        background: var(--panel-bg);
+        border-bottom: 1px solid var(--border);
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        font-size: 13px;
+        align-items: center;
+      }
+      .multi-open-controls p {
+        margin: 0;
+        color: var(--muted);
+        flex: 1 1 200px;
+      }
+      body.with-topbar .multi-open-root {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%;
+      }
+      body.with-topbar .multi-open-root .viewer {
+        flex: 1;
+        min-height: 0;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="multi-open-root">
+      <div class="multi-open-controls">
+        <p>Load image A or B on the same viewer. Overlays should survive; annotations clear on each switch (default).</p>
+        <button type="button" class="demo-btn" id="open-a">Open image A (Laocoon)</button>
+        <button type="button" class="demo-btn" id="open-b">Open image B (Ararat)</button>
+      </div>
+      <div id="viewer" class="viewer"></div>
+    </div>
+
+    <script src="/test/demo/assets/demo-tiles.js"></script>
+    <script src="/dist/osdplus.min.js"></script>
+    <script src="/test/demo/assets/nav.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        const viewer = new OSDPlus({
+          id: 'viewer',
+          crossOriginPolicy: 'Anonymous',
+          tileSources: window.OSDPLUS_DEMO_TILE_SOURCE,
+          paperOverlays: {
+            configurationWidget: true,
+            annotationToolkit: { toolbar: true, layerUI: true, layout: true },
+            fieldOfView: true,
+            screenshot: true,
+            rotationControl: true,
+          },
+        });
+
+        document.getElementById('open-a').addEventListener('click', () => {
+          viewer.open(window.OSDPLUS_DEMO_TILE_SOURCE);
+        });
+        document.getElementById('open-b').addEventListener('click', () => {
+          viewer.open(window.OSDPLUS_DEMO_TILE_SOURCE_B);
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -3,7 +3,10 @@ declare module 'osd-paperjs-annotation' {
   export class AnnotationToolkit {
     constructor(viewer: unknown, opts?: Record<string, unknown>);
     registerWithConfigurationWidget(configurationWidget: ConfigurationWidget): void;
+    getTool?(name: string): unknown;
+    addTools?(toolNames?: string[]): void;
     destroy?(): void;
+    close?(): void;
   }
 
   export class ScreenshotOverlay {
@@ -49,6 +52,20 @@ declare module 'osd-paperjs-annotation' {
     annotationToolkit: AnnotationToolkit,
     configurationWidget: ConfigurationWidget,
   ): HTMLElement | null;
+
+  export function mppFromTiledImage(
+    tiledImage: unknown,
+  ): { x: number; y: number } | null;
+
+  export function mppFromActiveViewerImage(
+    viewer: unknown,
+  ): { x: number; y: number } | null;
+
+  export function applyRulerPhysicalScaleFromMpp(
+    toolkit: AnnotationToolkit,
+    mpp: { x: number; y: number } | null,
+    options?: { unit?: 'mm' | 'um' },
+  ): boolean;
 
   export const OSDPaperjsAnnotation: Record<string, unknown>;
 }

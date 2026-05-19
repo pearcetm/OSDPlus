@@ -16,6 +16,12 @@ import type {
   RotationControlOverlayOptions,
   ScreenshotOverlayOptions,
 } from './types';
+import { installDrawerToggle } from './drawerToggle';
+import {
+  applyRulerToolkitOptions,
+  extractRulerOptions,
+  installRulerPhysicalScaleSync,
+} from './rulerPhysicalScale';
 
 function splitOptions(options: OSDPlusOptions): {
   paperOverlays: PaperOverlaysOptions | undefined;
@@ -82,7 +88,43 @@ function resolveOrder(paperOverlays: PaperOverlaysOptions | undefined): PaperOve
 }
 
 function normalizeToolkitOptions(value: true | AnnotationToolkitOptions): AnnotationToolkitOptions {
-  return value === true ? {} : isPlainObject(value) ? value : {};
+  const base = value === true ? {} : isPlainObject(value) ? value : {};
+  const { ruler: _ruler, ...rest } = base;
+  return {
+    ...rest,
+    destroyOnViewerClose: false,
+  };
+}
+
+function shouldClearAnnotationsOnViewerClose(paperOverlays: PaperOverlaysOptions): boolean {
+  if (paperOverlays.annotationToolkit === undefined) return false;
+  return paperOverlays.clearAnnotationsOnViewerClose !== false;
+}
+
+function destroyConstructedOverlays(
+  viewer: OSDPlus,
+  constructedOverlays: readonly PaperOverlaysOrderItem[],
+): void {
+  for (const key of constructedOverlays.slice().reverse()) {
+    if (key === 'screenshot') {
+      (viewer.screenshotOverlay as unknown as { destroy?: () => void } | undefined)?.destroy?.();
+    }
+    if (key === 'fieldOfView') {
+      (viewer.fieldOfViewOverlay as unknown as { destroy?: () => void } | undefined)?.destroy?.();
+    }
+    if (key === 'rotationControl') {
+      destroyRotationControlOverlay(viewer.rotationControlOverlay);
+    }
+    if (key === 'annotationToolkit') {
+      (viewer.annotationToolkit as unknown as { destroy?: () => void } | undefined)?.destroy?.();
+    }
+  }
+  viewer.configurationWidget?.destroy();
+  viewer.configurationWidget = undefined;
+  viewer.annotationToolkit = undefined;
+  viewer.screenshotOverlay = undefined;
+  viewer.fieldOfViewOverlay = undefined;
+  viewer.rotationControlOverlay = undefined;
 }
 
 function normalizeScreenshotOptions(value: true | ScreenshotOverlayOptions): ScreenshotOverlayOptions {
@@ -154,11 +196,16 @@ export class OSDPlus extends OpenSeadragon.Viewer {
     const constructedOverlays: PaperOverlaysOrderItem[] = [];
     for (const key of order) {
       if (key === 'annotationToolkit' && paperOverlays.annotationToolkit !== undefined) {
-        this.annotationToolkit = new AnnotationToolkit(
-          this,
-          normalizeToolkitOptions(paperOverlays.annotationToolkit),
-        );
+        const toolkitOpts = normalizeToolkitOptions(paperOverlays.annotationToolkit);
+        this.annotationToolkit = new AnnotationToolkit(this, toolkitOpts);
         constructedOverlays.push('annotationToolkit');
+        const rulerOpts = extractRulerOptions(paperOverlays.annotationToolkit);
+        if (rulerOpts) {
+          applyRulerToolkitOptions(this.annotationToolkit, rulerOpts);
+          if (rulerOpts.syncPhysicalScaleFromTileSource) {
+            installRulerPhysicalScaleSync(this, this.annotationToolkit, rulerOpts);
+          }
+        }
         if (
           this.configurationWidget &&
           configurationWidgetOpts?.attachAnnotationSection !== false
@@ -189,25 +236,24 @@ export class OSDPlus extends OpenSeadragon.Viewer {
       }
     }
 
-    if (constructedOverlays.length > 0 || this.configurationWidget) {
-      this.addOnceHandler('close', () => {
-        for (const key of constructedOverlays.slice().reverse()) {
-          if (key === 'screenshot') {
-            (this.screenshotOverlay as unknown as { destroy?: () => void } | undefined)?.destroy?.();
-          }
-          if (key === 'fieldOfView') {
-            (this.fieldOfViewOverlay as unknown as { destroy?: () => void } | undefined)?.destroy?.();
-          }
-          if (key === 'rotationControl') {
-            destroyRotationControlOverlay(this.rotationControlOverlay);
-          }
-          if (key === 'annotationToolkit') {
-            (this.annotationToolkit as unknown as { destroy?: () => void } | undefined)?.destroy?.();
-          }
-        }
-        this.configurationWidget?.destroy();
-        this.configurationWidget = undefined;
+    if (shouldClearAnnotationsOnViewerClose(paperOverlays)) {
+      this.addHandler('close', () => {
+        (this.annotationToolkit as unknown as { close?: () => void } | undefined)?.close?.();
       });
     }
+
+    if (constructedOverlays.length > 0 || this.configurationWidget) {
+      this.addOnceHandler('destroy', () => {
+        destroyConstructedOverlays(this, constructedOverlays);
+      });
+    }
+
+    installDrawerToggle(
+      this,
+      paperOverlays,
+      osdOptions.drawer,
+      this.configurationWidget,
+      configurationWidgetOpts,
+    );
   }
 }

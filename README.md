@@ -1,6 +1,6 @@
 # OSDPlus
 
-Single entry for an [OpenSeadragon](https://openseadragon.github.io/) viewer with [osd-paperjs-annotation](https://github.com/pearcetm/osd-paperjs-annotation) wired in. OSDPlus currently pins **OpenSeadragon 5.0.1** (not 6.x): osd-paperjs-annotation v0.7.1’s rotation overlay and mouse navigation behave correctly on 5.x; OpenSeadragon 6.0.2 has tracker API changes that break deactivate/restore until upstream adapts.
+Single entry for an [OpenSeadragon](https://openseadragon.github.io/) viewer with [osd-paperjs-annotation](https://github.com/pearcetm/osd-paperjs-annotation) wired in. OSDPlus pins **OpenSeadragon 5.0.1** and **osd-paperjs-annotation 0.7.6+** (not OpenSeadragon 6.x): osd-paperjs-annotation’s rotation overlay and mouse navigation behave correctly on 5.x; OpenSeadragon 6.0.2 has tracker API changes that break deactivate/restore until upstream adapts.
 
 With **npm**, install one package and import `osdplus`—your bundler resolves OpenSeadragon **5.0.1** and osd-paperjs-annotation as dependencies. With **script tags**, load a single [`dist/osdplus.min.js`](dist/osdplus.min.js): the published IIFE prepends **OpenSeadragon 5.0.1** and a **verbatim** copy of osd-paperjs-annotation’s webpack bundle, then the slim app (see [CDN](#cdn-jsdelivr)). That keeps Paper.js safe (the app is not fed through esbuild) while staying a one-stop script for the browser.
 
@@ -25,12 +25,31 @@ const viewer = new OSDPlus({
 
 Overlays are **opt-in** under `paperOverlays`:
 
-- `configurationWidget`: `true | { storageKey?, attachAnnotationSection? }` — gear dialog from osd-paperjs-annotation v0.7.1+. **Not** part of `order`. When enabled, OSDPlus constructs it **before** other overlays so they can auto-register (toolbar visibility, activate/deactivate). `storageKey` enables localStorage persistence for “Show button” toggles; omit or use `null` to disable. When `annotationToolkit` is also enabled, `attachAnnotationSection` defaults to `true` and OSDPlus calls `annotationToolkit.registerWithConfigurationWidget(configurationWidget)` after the toolkit is created (requires stock annotation UI so pencil and/or save buttons exist; see upstream [annotations README](https://github.com/pearcetm/osd-paperjs-annotation/blob/v0.7.1/src/js/overlays/annotations/README.md)).
-- `annotationToolkit`: `true | { ...options }`
+- `configurationWidget`: `true | { storageKey?, attachAnnotationSection?, drawerToggle? }` — gear dialog from osd-paperjs-annotation v0.7.2+. **Not** part of `order`. When enabled, OSDPlus constructs it **before** other overlays so they can auto-register (toolbar visibility, activate/deactivate). `storageKey` enables localStorage persistence for “Show button” toggles; omit or use `null` to disable. When `annotationToolkit` is also enabled, `attachAnnotationSection` defaults to `true` and OSDPlus calls `annotationToolkit.registerWithConfigurationWidget(configurationWidget)` after the toolkit is created (works with split `{ toolbar, layerUI, layout }` since **0.7.4**, split-layout grid CSS fixed in **0.7.5**). Set `attachAnnotationSection: false` to skip the Annotations block. See upstream [annotations README](https://github.com/pearcetm/osd-paperjs-annotation/blob/v0.7.6/src/js/overlays/annotations/README.md).
+- `drawerToggle`: `paperOverlays.drawerToggle` or `configurationWidget.drawerToggle` — opt-in Canvas / WebGL main-drawer toggle (OpenSeadragon 5 `requestDrawer`). Default **off** (`enabled: true` required). See [Canvas / WebGL drawer toggle](#canvas--webgl-drawer-toggle) below.
+- `annotationToolkit`: `true | { ...options, ruler? }` — see [Annotation UI (split API)](#annotation-ui-split-api) and [Ruler physical scale from mpp](#ruler-physical-scale-from-mpp) (`ruler.syncPhysicalScaleFromTileSource` requires osd-paperjs-annotation **0.7.2+**).
 - `screenshot`: `true | { ...options }` (upstream supports `registerWithConfig`, `showButton`, etc.)
 - `fieldOfView`: `true | { ...options }` (same overlay options as upstream)
 - `rotationControl`: `true | { ...options }` — `RotationControlOverlay` (viewer rotation UI); same `registerWithConfig` / `showButton` pattern as other `ViewerOverlayBase` overlays.
 - `order`: optional construction order for **overlay** keys only: `annotationToolkit`, `fieldOfView`, `screenshot`, `rotationControl`. Default when omitted: that sequence filtered to enabled keys. If present, it must be a permutation of the enabled overlays.
+- `clearAnnotationsOnViewerClose`: when `annotationToolkit` is enabled (default **`true`**), each viewer **`close`** (including the `close` that runs before every **`open()`**) calls upstream `AnnotationToolkit#close()` to clear annotations while keeping toolbar, layer UI, and layout. Set **`false`** if your app clears or persists annotations across tile-source changes. Full overlay teardown runs only on **`viewer.destroy()`**, not on `close`.
+
+## Switching tile sources / multiple opens
+
+Use one **`OSDPlus`** instance and call **`viewer.open(nextTileSources)`** whenever the user loads a new case or image. OpenSeadragon always fires **`close`** on the current item before opening the next; OSDPlus is written for that pattern:
+
+| Viewer event | OSDPlus behavior |
+|--------------|------------------|
+| **`close`** (before each `open`) | If `annotationToolkit` is enabled and `clearAnnotationsOnViewerClose` is not `false`, calls **`annotationToolkit.close()`** (soft reset). Screenshot, rotation, field-of-view, and configuration widget stay alive. |
+| **`destroy`** (page teardown) | Destroys all `paperOverlays` and the configuration widget. |
+
+Do **not** rely on destroying overlays when swapping tile sources—only call **`viewer.destroy()`** when removing the viewer from the page. To keep annotations per image across `open()`, set `clearAnnotationsOnViewerClose: false` and consider upstream **`cacheAnnotations: true`** on `paperOverlays.annotationToolkit` options.
+
+See [test/demo/multi-open.html](test/demo/multi-open.html).
+
+### Annotation UI (split API)
+
+From **osd-paperjs-annotation 0.7.3+**, scoped toolbar/layer styles load when you create UI via `getToolbar()` / `getLayerUI()` (including OSDPlus’s `{ toolbar: true, layerUI: true, layout: true }`). The IIFE vendor bundle includes those styles and is safe to load as a classic `<script>` (no `import.meta` in `dist/main.js` since **0.7.4**; correct single-scoped layout selectors in injected CSS since **0.7.5**). npm/ESM hosts inject link tags on first toolbar/layer creation. You do not need to call deprecated `addAnnotationUI()` for correct icon sizing, layout chrome, or ConfigurationWidget integration. Upstream documents scoping in [css-scoping.md](https://github.com/pearcetm/osd-paperjs-annotation/blob/v0.7.6/docs/css-scoping.md).
 
 ## Install (npm)
 
@@ -52,7 +71,7 @@ const viewer = new OSDPlus({
 });
 ```
 
-Types: `OSDPlusOptions`, `PaperOverlaysOptions`, `PaperOverlaysOrderItem`, `ConfigurationWidgetOptions`, `RotationControlOverlayOptions`.
+Types: `OSDPlusOptions`, `PaperOverlaysOptions`, `PaperOverlaysOrderItem`, `ConfigurationWidgetOptions`, `DrawerToggleOptions`, `DrawerToggleChoice`, `RulerPhysicalScaleOptions`, `RotationControlOverlayOptions`.
 
 ### OpenSeadragon re-export
 
@@ -103,6 +122,91 @@ viewer.addOnceHandler('open', () => {
 ```
 
 Persistence for annotation toolbar rows uses `ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL` and `ANNOTATION_TOOLBAR_PERSIST_ID_FILE` (re-exported from `osdplus`); they share the same JSON document as overlay rows when `storageKey` is set.
+
+### Ruler options (`annotationToolkit.ruler`)
+
+OSDPlus applies `paperOverlays.annotationToolkit.ruler` after the toolkit is created (osd-paperjs-annotation does not read this key itself). Requires the **ruler** tool in the toolset (included by default).
+
+| Option | Description |
+|--------|-------------|
+| `syncPhysicalScaleFromTileSource` | When `true`, sync scale/units from `tiledImage.source.mpp` on `open`, `page`, and tile-source `ready` (requires osd-paperjs-annotation **0.7.2+**). |
+| `displayUnit` | With sync: `'mm'` (default) or `'um'`. |
+| `decimals` | Decimal places for measurements (upstream default `2`). |
+| `roundingMode` | `'round'` (default) or `'truncate'`. |
+| `strokeWidthPixels`, `haloExtraPixels`, `labelFontSize` | Ruler line / halo / label defaults. |
+| `unitsPerPixel`, `labelUnit` | Manual scale; **overwritten** on each mpp sync when `syncPhysicalScaleFromTileSource` is `true`. |
+
+```js
+paperOverlays: {
+  annotationToolkit: {
+    toolbar: true,
+    layerUI: true,
+    layout: true,
+    ruler: {
+      syncPhysicalScaleFromTileSource: true,
+      displayUnit: 'mm',
+      decimals: 3,
+      roundingMode: 'truncate',
+    },
+  },
+}
+```
+
+When syncing from mpp:
+
+| `displayUnit` | `unitsPerPixel` | `labelUnit` |
+|---------------|-----------------|-------------|
+| `mm` (default) | `mpp.x / 1000` | `mm` |
+| `um` | `mpp.x` | `um` |
+
+When `viewer.world.getItemCount() !== 1`, mpp sync is skipped (same policy as FOV v1). If mpp is missing, scale stays at prior values (no throw).
+
+Re-exported for custom hosts: `applyRulerToolkitOptions`, `extractRulerOptions`, `mppFromTiledImage`, `mppFromActiveViewerImage`, `applyRulerPhysicalScaleFromMpp`.
+
+Demo: [test/demo/ruler-mpp.html](test/demo/ruler-mpp.html).
+
+### Canvas / WebGL drawer toggle
+
+For pathology / whole-slide viewers that want **Canvas by default** but an in-app switch to stock **WebGL** (OpenSeadragon 5), enable `drawerToggle` on the configuration widget (or at `paperOverlays` for headless apply-only):
+
+```js
+const viewer = new OSDPlus({
+  id: 'viewer',
+  drawer: 'canvas', // prefer Canvas over OSD’s default ['webgl', 'canvas', 'html']
+  paperOverlays: {
+    configurationWidget: {
+      storageKey: 'my-app-viewer-config',
+      drawerToggle: {
+        enabled: true,
+        defaultDrawer: 'canvas',
+        // persistKey: 'drawer',       // field in the shared JSON doc (default)
+        // sectionLabel: 'Rendering',
+        // choices: ['canvas', 'webgl'],
+      },
+    },
+    annotationToolkit: { toolbar: true, layerUI: true, layout: true },
+  },
+});
+```
+
+On the first **`open`**, OSDPlus applies persisted → `defaultDrawer` → your top-level `drawer` option, then adds a **Rendering** section to the gear dialog (when `configurationWidget` is enabled). Changing the select calls `viewer.requestDrawer(type, { mainDrawer: true })` and persists under the same `storageKey` JSON as toolbar visibility, e.g. `{ v: 1, drawer: 'webgl', overlays: { … } }`.
+
+| Option | Description |
+|--------|-------------|
+| `enabled` | Must be `true` to activate (default `false`). |
+| `defaultDrawer` | `'canvas'` or `'webgl'` when nothing is stored. |
+| `persistKey` | Top-level field in the storage JSON (default `'drawer'`). |
+| `storageKey` | Override widget `storageKey` for drawer persistence only. |
+| `persist` | Default `true` when a storage key resolves; set `false` to skip localStorage. |
+| `choices` | Default `['canvas', 'webgl']` (stock drawers only). |
+
+**Headless:** `paperOverlays.drawerToggle` with `storageKey` and no `configurationWidget` — applies persisted/default drawer on first `open`, no gear UI.
+
+**Pathology note:** Physical-scale annotations (mpp, mm rulers) may behave more consistently on **Canvas**; keep `drawer: 'canvas'` and `defaultDrawer: 'canvas'`, with WebGL as an opt-in experiment.
+
+**Custom drawers:** `drawerToggle` switches stock `'canvas'` / `'webgl'` only. Do not enable it when using a custom drawer class (e.g. `GammaVibranceWebGLDrawer`); use `addSection` for display controls instead.
+
+Demo: [test/demo/drawer-toggle.html](test/demo/drawer-toggle.html).
 
 ## Gamma/vibrance WebGL drawer (experimental)
 
@@ -190,6 +294,10 @@ Open **http://localhost:8080/test/demo/** for the demo hub. Viewer demos load a 
 | [screenshot.html](https://pearcetm.github.io/osd-paperjs-annotation/demo/screenshot.html) / [fieldofview.html](https://pearcetm.github.io/osd-paperjs-annotation/demo/fieldofview.html) | [test/demo/screenshot-overlay.html](test/demo/screenshot-overlay.html) / [test/demo/field-of-view-overlay.html](test/demo/field-of-view-overlay.html) |
 | [configuration.html](https://pearcetm.github.io/osd-paperjs-annotation/demo/configuration.html) | [test/demo/configuration-widget.html](test/demo/configuration-widget.html) |
 | [rotation.html](https://pearcetm.github.io/osd-paperjs-annotation/demo/rotation.html) | [test/demo/rotation-control-overlay.html](test/demo/rotation-control-overlay.html) |
+
+## Upstream osd-paperjs-annotation
+
+OSDPlus does **not** patch or rebuild osd-paperjs-annotation inside `node_modules`; it consumes the published npm package and copies `dist/main.js` into the IIFE preamble. Bump `osd-paperjs-annotation` in `package.json` and run `npm run build` when upgrading upstream.
 
 ## IIFE globals
 
