@@ -23,4 +23,6 @@ The first public release (`1.0.0`) was published manually; subsequent releases u
 
 Optional: **Publishing access → Require 2FA and disallow tokens** (the trusted publisher still works).
 
-Requires npm CLI 11.5.1+ and Node 22.14+ on the publish runner (the workflow uses Node 22.x and runs `npm install -g npm` before publish).
+Requires npm CLI 11.5.1+ on the publish runner. The workflow uses Node 24.x and pins `npm@11.6.2` before publish (trusted publishing fails with misleading `E404` on older npm).
+
+If publish fails with `E404` on `PUT .../osdplus`, re-check trusted publishing settings above (workflow filename, repo casing, empty environment field) before changing the workflow.

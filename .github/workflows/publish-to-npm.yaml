@@ -1,5 +1,5 @@
 # Adapted from https://docs.npmjs.com/generating-provenance-statements
-# Matches osd-paperjs-annotation publish-to-npm.yaml (trusted publishing / OIDC).
+# Trusted publishing / OIDC — requires npm CLI 11.5.1+ (Node 24 or explicit npm pin).
 
 name: Publish Package to npmjs
 
@@ -14,12 +14,13 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: "22.x"
+          node-version: "24.x"
           registry-url: "https://registry.npmjs.org"
-      - run: npm install -g npm
+      - run: npm install -g npm@11.6.2
+      - run: npm --version
       - run: npm ci
       - run: npm run build
       - run: npm publish --provenance --access public
