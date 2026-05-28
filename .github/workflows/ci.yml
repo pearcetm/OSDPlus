@@ -3,13 +3,8 @@ name: CI
 on:
   push:
     branches: [main, master]
-    tags:
-      - 'v*'
   pull_request:
     branches: [main, master]
-
-permissions:
-  contents: read
 
 jobs:
   build:
@@ -21,13 +16,6 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          registry-url: 'https://registry.npmjs.org'
 
       - run: npm ci
       - run: npm run build
-
-      - name: Publish to npm (version tags only)
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

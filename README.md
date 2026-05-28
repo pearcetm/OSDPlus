@@ -309,9 +309,34 @@ OSDPlus is MIT. Bundled upstream licenses apply at runtime (OpenSeadragon BSD-3-
 
 ## Release & npm publish
 
-1. Bump `version` in `package.json`.
-2. Create and push a git tag `v*` matching that version (for example `v1.0.1`).
-3. Configure the **`NPM_TOKEN`** secret on the GitHub repository.
-4. CI runs `npm run build` on every push/PR; on a **`v*`** tag push it also runs `npm publish`.
+Publishing matches [osd-paperjs-annotation](https://github.com/pearcetm/osd-paperjs-annotation): a **GitHub Release** triggers [`.github/workflows/publish-to-npm.yaml`](.github/workflows/publish-to-npm.yaml), which builds and runs `npm publish --provenance --access public` using **npm trusted publishing** (OIDC). No long-lived publish token is stored in GitHub.
 
-If you prefer publishing manually, run `npm publish` locally after `npm run build`.
+### Each release
+
+1. Bump `version` in `package.json` (for example `1.0.1`).
+2. Commit and push to `main` / `master` — [CI](.github/workflows/ci.yml) runs `npm ci` and `npm run build` on every push and PR.
+3. On GitHub: **Releases → Draft a new release** → tag `vX.Y.Z` matching that version (for example `v1.0.1` for `1.0.1`) → **Publish release**.
+4. The **Publish Package to npmjs** workflow runs on `release: created` and publishes to npm (with provenance when trusted publishing is configured).
+
+Pushing a `v*` tag alone does **not** publish; you must create the GitHub Release (same as osd-paperjs-annotation).
+
+### One-time setup (maintainers)
+
+**If `osdplus` is not on npm yet:** log in locally, then:
+
+```bash
+npm run build
+npm publish --access public
+```
+
+**Trusted publishing** (recommended; replaces granular publish tokens in CI):
+
+1. On [npmjs.com](https://www.npmjs.com/): **Packages → osdplus → Settings → Trusted publishing**.
+2. Provider: **GitHub Actions**.
+3. Repository: `pearcetm/OSDPlus` (must match `repository.url` in `package.json`, case-sensitive).
+4. Workflow filename: `publish-to-npm.yaml` (exact name, including `.yaml`).
+5. Save.
+
+Requires npm CLI 11.5.1+ and Node 22.14+ on the publish runner (the workflow uses Node 22.x and upgrades npm before publish). Optional hardening: **Publishing access → Require 2FA and disallow tokens** (trusted publisher still works).
+
+You do **not** need a `NPM_TOKEN` repository secret for publishing after trusted publishing is configured.
