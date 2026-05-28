@@ -1,7 +1,7 @@
 {
   "name": "osdplus",
-  "version": "1.0.0",
-  "description": "OpenSeadragon viewer with osd-paperjs-annotation bundled for a single-script or single-package install.",
+  "version": "1.0.1",
+  "description": "OpenSeadragon 5 viewer with osd-paperjs-annotation overlays — one npm package or one script tag.",
   "license": "MIT",
   "author": "pearcetm",
   "repository": {
