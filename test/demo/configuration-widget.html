@@ -40,9 +40,16 @@
             configurationWidget: { storageKey: 'osdplus-demo-config' },
             annotationToolkit: { toolbar: true, layerUI: true, layout: true },
             fieldOfView: true,
+            measurements: { scalebarStartIn: 'showing' },
             screenshot: true,
             rotationControl: true,
-            order: ['annotationToolkit', 'fieldOfView', 'screenshot', 'rotationControl'],
+            order: [
+              'annotationToolkit',
+              'fieldOfView',
+              'measurements',
+              'screenshot',
+              'rotationControl',
+            ],
           },
         });
 

@@ -38,6 +38,7 @@ const OPA_GLOBAL_EXPORTS = [
   'FieldOfViewOverlay',
   'FileDialog',
   'LayerUI',
+  'MeasurementsOverlay',
   'LinestringTool',
   'OSDPaperjsAnnotation',
   'PaperOffset',

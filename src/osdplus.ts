@@ -3,6 +3,7 @@ import {
   AnnotationToolkit,
   ConfigurationWidget,
   FieldOfViewOverlay,
+  MeasurementsOverlay,
   RotationControlOverlay,
   ScreenshotOverlay,
 } from 'osd-paperjs-annotation';
@@ -10,6 +11,7 @@ import type {
   AnnotationToolkitOptions,
   ConfigurationWidgetOptions,
   FieldOfViewOverlayOptions,
+  MeasurementsOverlayOptions,
   OSDPlusOptions,
   PaperOverlaysOrderItem,
   PaperOverlaysOptions,
@@ -52,6 +54,7 @@ function enabledSet(paperOverlays: PaperOverlaysOptions | undefined): Set<PaperO
   if (!paperOverlays) return set;
   if (paperOverlays.annotationToolkit !== undefined) set.add('annotationToolkit');
   if (paperOverlays.fieldOfView !== undefined) set.add('fieldOfView');
+  if (paperOverlays.measurements !== undefined) set.add('measurements');
   if (paperOverlays.screenshot !== undefined) set.add('screenshot');
   if (paperOverlays.rotationControl !== undefined) set.add('rotationControl');
   return set;
@@ -62,6 +65,7 @@ function resolveOrder(paperOverlays: PaperOverlaysOptions | undefined): PaperOve
   const preferred = [
     'annotationToolkit',
     'fieldOfView',
+    'measurements',
     'screenshot',
     'rotationControl',
   ] as const satisfies readonly PaperOverlaysOrderItem[];
@@ -112,6 +116,9 @@ function destroyConstructedOverlays(
     if (key === 'fieldOfView') {
       (viewer.fieldOfViewOverlay as unknown as { destroy?: () => void } | undefined)?.destroy?.();
     }
+    if (key === 'measurements') {
+      (viewer.measurementsOverlay as unknown as { destroy?: () => void } | undefined)?.destroy?.();
+    }
     if (key === 'rotationControl') {
       destroyRotationControlOverlay(viewer.rotationControlOverlay);
     }
@@ -124,6 +131,7 @@ function destroyConstructedOverlays(
   viewer.annotationToolkit = undefined;
   viewer.screenshotOverlay = undefined;
   viewer.fieldOfViewOverlay = undefined;
+  viewer.measurementsOverlay = undefined;
   viewer.rotationControlOverlay = undefined;
 }
 
@@ -132,6 +140,12 @@ function normalizeScreenshotOptions(value: true | ScreenshotOverlayOptions): Scr
 }
 
 function normalizeFieldOfViewOptions(value: true | FieldOfViewOverlayOptions): FieldOfViewOverlayOptions {
+  return value === true ? {} : isPlainObject(value) ? value : {};
+}
+
+function normalizeMeasurementsOptions(
+  value: true | MeasurementsOverlayOptions,
+): MeasurementsOverlayOptions {
   return value === true ? {} : isPlainObject(value) ? value : {};
 }
 
@@ -174,6 +188,7 @@ export class OSDPlus extends OpenSeadragon.Viewer {
   configurationWidget?: ConfigurationWidget;
   screenshotOverlay?: ScreenshotOverlay;
   fieldOfViewOverlay?: FieldOfViewOverlay;
+  measurementsOverlay?: MeasurementsOverlay;
   rotationControlOverlay?: RotationControlOverlay;
 
   constructor(options: OSDPlusOptions) {
@@ -226,6 +241,13 @@ export class OSDPlus extends OpenSeadragon.Viewer {
           normalizeFieldOfViewOptions(paperOverlays.fieldOfView),
         );
         constructedOverlays.push('fieldOfView');
+      }
+      if (key === 'measurements' && paperOverlays.measurements !== undefined) {
+        this.measurementsOverlay = new MeasurementsOverlay(
+          this,
+          normalizeMeasurementsOptions(paperOverlays.measurements),
+        );
+        constructedOverlays.push('measurements');
       }
       if (key === 'rotationControl' && paperOverlays.rotationControl !== undefined) {
         this.rotationControlOverlay = new RotationControlOverlay(

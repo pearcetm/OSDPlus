@@ -11,6 +11,7 @@ Run locally: `npm install` then `npm run demo`, then open **http://localhost:808
 | [listener-api.html](https://pearcetm.github.io/osd-paperjs-annotation/demo/listener-api.html) | [annotation-toolkit-events.html](../test/demo/annotation-toolkit-events.html) |
 | Per-tool pages (brush, polygon, …) | [annotation-toolkit-toolbar-tools.html](../test/demo/annotation-toolkit-toolbar-tools.html) |
 | [screenshot.html](https://pearcetm.github.io/osd-paperjs-annotation/demo/screenshot.html) / [fieldofview.html](https://pearcetm.github.io/osd-paperjs-annotation/demo/fieldofview.html) | [screenshot-overlay.html](../test/demo/screenshot-overlay.html) / [field-of-view-overlay.html](../test/demo/field-of-view-overlay.html) |
+| Measurements (scalebar + ruler) | [measurements-overlay.html](../test/demo/measurements-overlay.html) |
 | [configuration.html](https://pearcetm.github.io/osd-paperjs-annotation/demo/configuration.html) | [configuration-widget.html](../test/demo/configuration-widget.html) |
 | [rotation.html](https://pearcetm.github.io/osd-paperjs-annotation/demo/rotation.html) | [rotation-control-overlay.html](../test/demo/rotation-control-overlay.html) |
 

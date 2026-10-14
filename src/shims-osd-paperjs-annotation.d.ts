@@ -19,6 +19,11 @@ declare module 'osd-paperjs-annotation' {
     destroy?(): void;
   }
 
+  export class MeasurementsOverlay {
+    constructor(viewer: unknown, opts?: Record<string, unknown>);
+    destroy?(): void;
+  }
+
   export class PaperOverlay {
     constructor(viewer: unknown, opts?: Record<string, unknown>);
     destroy?(): void;

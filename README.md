@@ -2,7 +2,7 @@
 
 OpenSeadragon 5 viewer with [osd-paperjs-annotation](https://github.com/pearcetm/osd-paperjs-annotation) overlays — one npm package for bundlers, or one script tag for the browser.
 
-**Requirements:** OpenSeadragon 5.0.1 and osd-paperjs-annotation ^0.7.6 (included as dependencies).
+**Requirements:** OpenSeadragon 5.0.1 and osd-paperjs-annotation ^0.7.7 (included as dependencies).
 
 ## Install
 
@@ -31,7 +31,7 @@ const viewer = new OSDPlus({
 **Browser (jsDelivr):**
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/osdplus@1.0.1/dist/osdplus.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/osdplus@1.0.2/dist/osdplus.min.js"></script>
 <script>
   const viewer = new OSDPlus({
     id: 'viewer',
@@ -45,7 +45,7 @@ const viewer = new OSDPlus({
 </script>
 ```
 
-The bundle is about 2 MB (OpenSeadragon + osd-paperjs-annotation + wrapper). Pin the version in the URL (e.g. `@1.0.1`).
+The bundle is about 2 MB (OpenSeadragon + osd-paperjs-annotation + wrapper). Pin the version in the URL (e.g. `@1.0.2`).
 
 All constructor options except `paperOverlays` are passed to OpenSeadragon. If you omit `prefixUrl`, OSDPlus sets OpenSeadragon UI images from jsDelivr using the bundled OpenSeadragon version.
 
@@ -59,9 +59,10 @@ Overlays are opt-in under `paperOverlays`:
 | `configurationWidget` | Gear dialog; not part of `order`. Built before other overlays. `storageKey` persists toolbar toggles. With `annotationToolkit`, registers an Annotations section by default (`attachAnnotationSection: false` to skip). |
 | `screenshot` | Screenshot overlay |
 | `fieldOfView` | Field-of-view overlay |
+| `measurements` | Unified measurements overlay (scalebar + ruler chrome). Options passthrough (e.g. `scalebarStartIn: 'showing'`, `showButton`). |
 | `rotationControl` | Viewer rotation UI |
 | `drawerToggle` | Canvas / WebGL drawer switch (`enabled: true` required). On `configurationWidget` or `paperOverlays`. |
-| `order` | Construction order among overlay keys (default: annotationToolkit → fieldOfView → screenshot → rotationControl). |
+| `order` | Construction order among overlay keys (default: annotationToolkit → fieldOfView → measurements → screenshot → rotationControl). |
 | `clearAnnotationsOnViewerClose` | Default `true`: `annotationToolkit.close()` on each viewer `close` before `open()`. Set `false` to keep annotations when swapping tile sources. |
 
 For swapping images on one viewer, see [docs/developing.md](docs/developing.md#switching-tile-sources-multi-open).

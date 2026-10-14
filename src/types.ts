@@ -3,6 +3,7 @@ import type OpenSeadragon from 'openseadragon';
 export type PaperOverlaysOrderItem =
   | 'annotationToolkit'
   | 'fieldOfView'
+  | 'measurements'
   | 'screenshot'
   | 'rotationControl';
 
@@ -45,6 +46,12 @@ export type AnnotationToolkitOptions = Record<string, unknown> & {
 };
 export type ScreenshotOverlayOptions = Record<string, unknown>;
 export type FieldOfViewOverlayOptions = Record<string, unknown>;
+/**
+ * Options for osd-paperjs-annotation’s MeasurementsOverlay (passthrough).
+ * Known upstream keys: `scalebarStartIn` (`'showing'`), `showButton`, `features`
+ * (`{ scalebar?, ruler? }`), `registerWithConfig`.
+ */
+export type MeasurementsOverlayOptions = Record<string, unknown>;
 export type RotationControlOverlayOptions = Record<string, unknown>;
 
 export type DrawerToggleChoice = 'canvas' | 'webgl';
@@ -109,6 +116,9 @@ export type PaperOverlaysOptions = {
 
   /** Opt-in to FieldOfViewOverlay. `true` uses upstream defaults. */
   fieldOfView?: true | FieldOfViewOverlayOptions;
+
+  /** Opt-in to MeasurementsOverlay (scalebar + ruler chrome). `true` uses upstream defaults. */
+  measurements?: true | MeasurementsOverlayOptions;
 
   /** Opt-in to RotationControlOverlay. `true` uses upstream defaults. */
   rotationControl?: true | RotationControlOverlayOptions;

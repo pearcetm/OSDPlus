@@ -1,6 +1,6 @@
 {
   "name": "osdplus",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "OpenSeadragon 5 viewer with osd-paperjs-annotation overlays — one npm package or one script tag.",
   "license": "MIT",
   "author": "pearcetm",
@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "openseadragon": "5.0.1",
-    "osd-paperjs-annotation": "^0.7.6"
+    "osd-paperjs-annotation": "^0.7.7"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
