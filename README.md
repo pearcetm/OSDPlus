@@ -2,7 +2,7 @@
 
 OpenSeadragon 5 viewer with [osd-paperjs-annotation](https://github.com/pearcetm/osd-paperjs-annotation) overlays — one npm package for bundlers, or one script tag for the browser.
 
-**Requirements:** OpenSeadragon 5.0.1 and osd-paperjs-annotation ^0.7.7 (included as dependencies).
+**Requirements:** OpenSeadragon 5.0.1 and osd-paperjs-annotation ^0.7.8 (included as dependencies).
 
 ## Install
 
@@ -31,7 +31,7 @@ const viewer = new OSDPlus({
 **Browser (jsDelivr):**
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/osdplus@1.0.2/dist/osdplus.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/osdplus@1.0.3/dist/osdplus.min.js"></script>
 <script>
   const viewer = new OSDPlus({
     id: 'viewer',
@@ -45,7 +45,7 @@ const viewer = new OSDPlus({
 </script>
 ```
 
-The bundle is about 2 MB (OpenSeadragon + osd-paperjs-annotation + wrapper). Pin the version in the URL (e.g. `@1.0.2`).
+The bundle is about 2 MB (OpenSeadragon + osd-paperjs-annotation + wrapper). Pin the version in the URL (e.g. `@1.0.3`).
 
 All constructor options except `paperOverlays` are passed to OpenSeadragon. If you omit `prefixUrl`, OSDPlus sets OpenSeadragon UI images from jsDelivr using the bundled OpenSeadragon version.
 
